@@ -69,7 +69,7 @@ func checkClientInfo(name string) {
 			}
 		}
 	} else {
-		fmt.Printf("Неможливо відобразити інформацію про клієнта: %s .Такого Кліента не існує\n", name)
+		fmt.Printf("Неможливо відобразити інформацію про клієнта: %s .Такого Кліента не існує ❌\n", name)
 	}
 }
 
@@ -93,8 +93,8 @@ func updateClient(name string, change int, newName string) {
 			}
 			fmt.Println("Прізвище Успішно Оновлене")
 		}
-
 	}
+	fmt.Printf("Неможливо оновити данні о клієнті %s.Такого Кліента не існує ❌\n", name)
 }
 
 // Отримує текстове введення
@@ -128,5 +128,5 @@ func getIntInput(prompt string) int {
 }
 
 func main() {
-
+	updateClient("Popa228", 2, "NewPopa")
 }
