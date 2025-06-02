@@ -93,8 +93,9 @@ func updateClient(name string, change int, newName string) {
 			}
 			fmt.Println("Прізвище Успішно Оновлене")
 		}
+	} else {
+		fmt.Printf("Неможливо оновити данні о клієнті %s.Такого Кліента не існує ❌\n", name)
 	}
-	fmt.Printf("Неможливо оновити данні о клієнті %s.Такого Кліента не існує ❌\n", name)
 }
 
 // Отримує текстове введення
@@ -128,5 +129,9 @@ func getIntInput(prompt string) int {
 }
 
 func main() {
-	updateClient("Popa228", 2, "NewPopa")
+	//перевірка
+	registerClient("Joseph", "Joestar", "secretpass")
+	checkClientInfo("Joseph")
+	updateClient("Joseph", 1, "Jotaro")
+	checkClientInfo("Jotaro")
 }
