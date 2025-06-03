@@ -11,7 +11,7 @@ type Product struct {
 	ID          int
 	Name        string
 	Description string
-	Price       int
+	Price       float64
 	Category    string
 	Stock       int
 	IsActive    bool
@@ -32,8 +32,112 @@ var customers = make([]Customer, 0)
 // читачь строки
 var reader *bufio.Reader = bufio.NewReader(os.Stdin)
 
-// Управління клієнтами
+// Управління товарами:
+// Додавання нових товарів до каталогу
+func addProducts(name, desc, category string, price float64, stock int) bool {
+	if !productsExists(name, desc) {
+		product := Product{
+			ID:          len(products) + 1,
+			Name:        name,
+			Description: desc,
+			Price:       price,
+			Category:    category,
+			Stock:       stock,
+			IsActive:    true,
+		}
 
+		products = append(products, product)
+		return true
+	}
+	return false
+}
+
+// Перевірка чи існує товар
+func productsExists(name, desc string) bool {
+	for _, p := range products {
+		if p.Name == name && p.Description == desc {
+			return true
+		}
+	}
+	return false
+}
+
+// Видалення товарів з каталогу
+func deleteProducts(id int) bool {
+	for i, p := range products {
+		if p.ID == id {
+			products = append(products[:i], products[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Пошук товарів за назвою
+func searchProductByName(name string) {
+	found := false
+	for _, p := range products {
+		if p.Name == name {
+			if !found {
+				fmt.Printf("Товар %s Успішно Знайдений.\nВсі товари з токою ж назвою:\n", name)
+				found = true
+			}
+			fmt.Printf("ID: %d | %s | Опис: %s | Ціна: %.2f грн | Наявність: %d шт.\n", p.ID, p.Name, p.Description, p.Price, p.Stock)
+		}
+	}
+	if !found {
+		fmt.Printf("Товар %s не знайдено!\n", name)
+	}
+}
+
+// Пошук товарів за назвою
+func searchProductById(id int) {
+	for _, p := range products {
+		if p.ID == id {
+			fmt.Println("Товар Успішно Знайдений.")
+			fmt.Printf("ID: %d | %s | Опис: %s | Ціна: %.2f грн | Наявність: %d шт.\n", p.ID, p.Name, p.Description, p.Price, p.Stock)
+			return
+		}
+	}
+	fmt.Println("Товар не знайдено!")
+}
+
+// Відображення всіх товарів
+func displayAllProducts() {
+	for _, p := range products {
+		fmt.Printf("ID: %d | %s | Категорія: %s | Опис: %s | Ціна: %.2f грн | Наявність: %d шт.\n", p.ID, p.Name, p.Category, p.Description, p.Price, p.Stock)
+	}
+}
+
+// Відображення всіх товарів з наявністю
+func displayAllProductsStock() {
+	found := false
+	for _, p := range products {
+		if p.Stock > 0 {
+			if !found {
+				found = true
+			}
+			fmt.Printf("ID: %d | %s | Категорія: %s | Опис: %s | Ціна: %.2f грн | Наявність: %d шт.\n", p.ID, p.Name, p.Category, p.Description, p.Price, p.Stock)
+		}
+	}
+	if !found {
+		fmt.Println("Немає товарів в наявності")
+	}
+}
+
+// Оновлення ціни та кількості товару
+func UpdatePriceStock(id int, newPrice float64, newStock int) {
+	for i, p := range products {
+		if p.ID == id {
+			products[i].Price = newPrice
+			products[i].Stock = newStock
+			return
+		}
+	}
+
+}
+
+// Управління клієнтами
 // Реєстрація нових клієнтів
 func registerClient(name, surname, password string) bool {
 	if !clientExists(name) {
@@ -130,8 +234,27 @@ func getIntInput(prompt string) int {
 
 func main() {
 	//перевірка
-	registerClient("Joseph", "Joestar", "secretpass")
-	checkClientInfo("Joseph")
-	updateClient("Joseph", 1, "Jotaro")
-	checkClientInfo("Jotaro")
+	addProducts("RTX 4060TI", "GYGABYTE GeForce RTX 4060TI", "Пк Комплектуючі", 20000, 5)
+	addProducts("RTX 5060TI", "GYGABYTE GeForce RTX 5060TI", "Пк Комплектуючі", 30000, 5)
+	addProducts("RTX 3060TI", "GYGABYTE GeForce RTX 3060TI", "Пк Комплектуючі", 12000, 0)
+	fmt.Println("display all products")
+	displayAllProducts()
+
+	deleteProducts(2)
+
+	fmt.Println("\nsearch products dy id")
+	searchProductById(1)
+
+	fmt.Println("\nsearch products by name")
+	searchProductByName("RTX 5060TI")
+
+	fmt.Println("\ndisplay all products")
+	displayAllProducts()
+
+	fmt.Println("\ndisplay all products stocks")
+	displayAllProductsStock()
+
+	fmt.Println("\nUpdate and Display")
+	UpdatePriceStock(1, 19500, 3)
+	displayAllProducts()
 }
