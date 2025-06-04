@@ -18,39 +18,27 @@ type Product struct {
 }
 
 type Customer struct {
+	ClientID int
 	Name     string
 	Surname  string
-	Password string
+}
+
+type Cart struct {
+	ClientID  int
+	ProductID int
+	Quantity  int
 }
 
 var products = make([]Product, 0)
 var customers = make([]Customer, 0)
 
 // var orders = make([]Order, 0)
-// var carts = make(map[int]Cart)
+var carts = make(map[int]Cart)
 
 // читачь строки
 var reader *bufio.Reader = bufio.NewReader(os.Stdin)
 
 // Управління товарами:
-// Додавання нових товарів до каталогу
-func addProducts(name, desc, category string, price float64, stock int) bool {
-	if !productsExists(name, desc) {
-		product := Product{
-			ID:          len(products) + 1,
-			Name:        name,
-			Description: desc,
-			Price:       price,
-			Category:    category,
-			Stock:       stock,
-			IsActive:    true,
-		}
-
-		products = append(products, product)
-		return true
-	}
-	return false
-}
 
 // Перевірка чи існує товар
 func productsExists(name, desc string) bool {
@@ -62,15 +50,32 @@ func productsExists(name, desc string) bool {
 	return false
 }
 
+// Додавання нових товарів до каталогу
+func (p *Product) addProducts() bool {
+	if !productsExists(p.Name, p.Description) {
+		p.ID = len(products) + 1
+		p.IsActive = true
+		products = append(products, *p)
+		return true
+	}
+	return false
+}
+
 // Видалення товарів з каталогу
-func deleteProducts(id int) bool {
-	for i, p := range products {
-		if p.ID == id {
+func (p Product) deleteProducts() bool {
+	for i, prod := range products {
+		if prod.ID == p.ID {
 			products = append(products[:i], products[i+1:]...)
 			return true
 		}
 	}
 	return false
+}
+
+// Оновлення ціни та кількості товару
+func (p *Product) UpdatePriceStock(newPrice float64, newStock int) {
+	p.Price = newPrice
+	p.Stock = newStock
 }
 
 // Пошук товарів за назвою
@@ -90,7 +95,7 @@ func searchProductByName(name string) {
 	}
 }
 
-// Пошук товарів за назвою
+// Пошук товарів за ID
 func searchProductById(id int) {
 	for _, p := range products {
 		if p.ID == id {
@@ -125,34 +130,7 @@ func displayAllProductsStock() {
 	}
 }
 
-// Оновлення ціни та кількості товару
-func UpdatePriceStock(id int, newPrice float64, newStock int) {
-	for i, p := range products {
-		if p.ID == id {
-			products[i].Price = newPrice
-			products[i].Stock = newStock
-			return
-		}
-	}
-
-}
-
 // Управління клієнтами
-// Реєстрація нових клієнтів
-func registerClient(name, surname, password string) bool {
-	if !clientExists(name) {
-
-		client := Customer{
-			Name:     name,
-			Surname:  surname,
-			Password: password,
-		}
-
-		customers = append(customers, client)
-		return true
-	}
-	return false
-}
 
 // Перевірка чи існує кліент
 func clientExists(name string) bool {
@@ -164,42 +142,155 @@ func clientExists(name string) bool {
 	return false
 }
 
+// Реєстрація нових клієнтів
+func (c *Customer) registerClient() bool {
+	if !clientExists(c.Name) {
+		c.ClientID = len(customers) + 1
+		customers = append(customers, *c)
+		return true
+	}
+	return false
+}
+
 // Перегляд інформації про клієнта
 func checkClientInfo(name string) {
 	if clientExists(name) {
 		for _, c := range customers {
 			if c.Name == name {
-				fmt.Printf("Прізвище: %s\nІм'я: %s\nПароль: %s\n", c.Surname, c.Name, c.Password)
+				fmt.Printf("ID: %d\nПрізвище: %s\nІм'я: %s\n", c.ClientID, c.Surname, c.Name)
 			}
 		}
 	} else {
-		fmt.Printf("Неможливо відобразити інформацію про клієнта: %s .Такого Кліента не існує ❌\n", name)
+		fmt.Printf("Такого Кліента не існує ❌\n", name)
 	}
 }
 
-// Оновлення контактних даних клієнта
-func updateClient(name string, change int, newName string) {
-	if clientExists(name) {
-		if change == 1 {
-			for i, c := range customers {
-				if c.Name == name {
-					customers[i].Name = newName
-					break
-				}
-			}
-			fmt.Println("Ім'я Успішно Оновлене")
-		} else if change == 2 {
-			for i, c := range customers {
-				if c.Name == name {
-					customers[i].Surname = newName
-					break
-				}
-			}
-			fmt.Println("Прізвище Успішно Оновлене")
+// Пошук индексу клієнта по имені
+func findCustomerIndex(name string) int {
+	for i, c := range customers {
+		if c.Name == name {
+			return i
 		}
-	} else {
-		fmt.Printf("Неможливо оновити данні о клієнті %s.Такого Кліента не існує ❌\n", name)
 	}
+	return -1
+}
+
+// Оновлення контактних даних клієнта
+func (c *Customer) updateClient(change int, newValue string) {
+	index := findCustomerIndex(c.Name)
+	if index == -1 {
+		fmt.Printf("Такого Кліента не існує ❌\n", c.Name)
+		return
+	}
+
+	switch change {
+	case 1:
+		customers[index].Name = newValue
+		fmt.Println("Ім'я Успішно Оновлене")
+	case 2:
+		customers[index].Surname = newValue
+		fmt.Println("Прізвище Успішно Оновлене")
+	default:
+		fmt.Println("Невірний параметр зміни ❌")
+	}
+}
+
+// Система кошика:
+
+// Додавання товарів до кошика
+func (c *Cart) addCarts() bool {
+	found := false
+	for _, p := range products {
+		if p.ID == c.ProductID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return false
+	}
+
+	carts[c.ProductID] = *c
+	return true
+}
+
+// Видалення товарів з кошика
+func (c Cart) deleteProductFromCart() bool {
+	for i, item := range carts {
+		if item.ProductID == c.ProductID {
+			delete(carts, i)
+			return true
+		}
+	}
+	return false
+}
+
+// Перегляд вмісту кошика
+// переделать функцию
+func CheckCartItem(name string) {
+	var client *Customer
+	for _, c := range customers {
+		if c.Name == name {
+			client = &c
+			break
+		}
+	}
+
+	if client == nil {
+		fmt.Println("Клієнта не знайдено.")
+		return
+	}
+
+	fmt.Printf("Клієнт: %s %s\n", client.Name, client.Surname)
+
+	found := false
+
+	for _, cart := range carts {
+		if cart.ClientID == client.ClientID {
+			for i, prod := range products {
+				if prod.ID == cart.ProductID {
+					fmt.Printf("%d. %s x%d - %.2f грн\n", i+1, prod.Name, cart.Quantity, prod.Price*float64(cart.Quantity))
+					found = true
+					break
+				}
+			}
+		}
+	}
+	if !found {
+		fmt.Println("Кошик порожній.")
+		return
+	}
+
+	totalsum := calculateCartTotal(client.ClientID)
+	fmt.Println("Знижка: 0%") //добавить потом знижку глобальную переменую и функцию для расчета
+	fmt.Printf("Загальна сума: %.2f грн\n", totalsum)
+}
+
+// Підрахунок загальної суми в кошику
+func calculateCartTotal(ClientID int) float64 {
+	totalsum := 0.0
+	for _, cart := range carts {
+		if cart.ClientID == ClientID {
+			for _, prod := range products {
+				if prod.ID == cart.ProductID {
+					totalsum += prod.Price * float64(cart.Quantity)
+					break
+				}
+			}
+		}
+	}
+	return totalsum
+}
+
+// Розрахунок загальної суми з урахуванням знижок
+func calculateTotalSum(cli int, confirm bool) {
+	del := 100.0
+	totalSum := calculateCartTotal(cli)
+
+	fmt.Printf("Вартість доставки: %.2f грн\n", del)
+	fmt.Printf("Загальна сума до сплати: %.2f грн\n", totalSum+del)
+
+	// сделать створення замовлення для кошика в Система замовлень і добавити сюди
 }
 
 // Отримує текстове введення
@@ -234,27 +325,48 @@ func getIntInput(prompt string) int {
 
 func main() {
 	//перевірка
-	addProducts("RTX 4060TI", "GYGABYTE GeForce RTX 4060TI", "Пк Комплектуючі", 20000, 5)
-	addProducts("RTX 5060TI", "GYGABYTE GeForce RTX 5060TI", "Пк Комплектуючі", 30000, 5)
-	addProducts("RTX 3060TI", "GYGABYTE GeForce RTX 3060TI", "Пк Комплектуючі", 12000, 0)
-	fmt.Println("display all products")
-	displayAllProducts()
+	p := Product{
+		Name:        "RTX 3060",
+		Description: "GYGABYTE RTX 3060",
+		Price:       8000,
+		Category:    "Пк Комплектуючі",
+		Stock:       4,
+	}
+	p2 := Product{
+		Name:        "RTX 4060",
+		Description: "GYGABYTE RTX 4060",
+		Price:       12000,
+		Category:    "Пк Комплектуючі",
+		Stock:       2,
+	}
+	c := Customer{
+		Name:    "Jotaro",
+		Surname: "Kujo",
+	}
+	k := Cart{
+		ClientID:  c.ClientID + 1,
+		ProductID: 1,
+		Quantity:  2,
+	}
+	k2 := Cart{
+		ClientID:  c.ClientID + 1,
+		ProductID: 2,
+		Quantity:  1,
+	}
+	p.addProducts()
+	p2.addProducts()
+	c.registerClient()
+	k.addCarts()
+	k2.addCarts()
 
-	deleteProducts(2)
+	fmt.Println(products)
+	fmt.Println(customers)
+	fmt.Println(carts)
 
-	fmt.Println("\nsearch products dy id")
-	searchProductById(1)
+	//k2.deleteProductFromCart()
+	fmt.Println(carts)
+	CheckCartItem("Jotaro")
+	CheckCartItem("Зщзф")
 
-	fmt.Println("\nsearch products by name")
-	searchProductByName("RTX 5060TI")
-
-	fmt.Println("\ndisplay all products")
-	displayAllProducts()
-
-	fmt.Println("\ndisplay all products stocks")
-	displayAllProductsStock()
-
-	fmt.Println("\nUpdate and Display")
-	UpdatePriceStock(1, 19500, 3)
-	displayAllProducts()
+	calculateTotalSum(1, true)
 }
