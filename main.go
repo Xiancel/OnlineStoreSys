@@ -1,5 +1,7 @@
 package main
 
+// Система Онлайн Магазину
+
 import (
 	"bufio"
 	"fmt"
