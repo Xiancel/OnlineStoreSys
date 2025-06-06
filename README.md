@@ -45,5 +45,5 @@
 ## Ссилка для швидкого копіювання проєкту
 ```git
 git clone https://github.com/Xiancel/OnlineStoreSys.git
-cd storesys
+cd OnlineStoreSys
 ```
