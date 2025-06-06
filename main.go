@@ -349,7 +349,7 @@ func CheckCartItem(name string) {
 	finalsum := totalsum - discount
 
 	// вивід повідомлень
-	fmt.Println("Знижка: %.0f%%", globalDisc)
+	fmt.Printf("Знижка: %.0f%%\n", globalDisc)
 	fmt.Printf("Загальна сума: %.2f грн\n", finalsum)
 }
 
